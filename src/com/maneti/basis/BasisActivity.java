@@ -89,7 +89,7 @@ public class BasisActivity extends Activity implements Runnable {
 					public void Handle(Packet packet) {
 						if(packet.type == this.type){
 							for(int i = 0; i < packet.value; i ++){
-								networkThread.toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataContainer, "00"+Packet.reverseBytes(Packet.paddToLength(Packet.paddToByte(Integer.toHexString(i)), 2 ))));
+								networkThread.toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataContainer, Packet.reverseBytes(Packet.paddToLength(Packet.paddToByte(Integer.toHexString(i)), 2 ))));
 								networkThread.toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataContainer));
 								networkThread.toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));
 							}

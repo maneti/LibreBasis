@@ -53,11 +53,12 @@ public class Packet {
 		if (type == Command.Response_GetPulseDataNumBytes){
 			value = Long.parseLong(reverseBytes(content.substring(2)), 16);
 		}
-		if (content.length() >= 6 && (type == Command.Command_GetPulseDataContainer || type == Command.Response_GetPulseDataContainer)){
-			value = Long.parseLong(reverseBytes(content.substring(2, 6)), 16);//container number
-		}
-		if (type == Command.Response_GetPulseDataContainer){
-			value = Long.parseLong(reverseBytes(content.substring(2, 6)), 16);//container number
+		if ((type == Command.Command_GetPulseDataContainer || type == Command.Response_GetPulseDataContainer)){
+			if(content.length() >= 6){
+				value = Long.parseLong(reverseBytes(content.substring(2, 6)), 16);//container number
+			} else {
+				value = Long.parseLong(reverseBytes(content.substring(0, 4)), 16);//container number
+			}
 		}
 	}
 	public static String humanReadableByteCount(long bytes, boolean si) {
