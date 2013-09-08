@@ -27,3 +27,4 @@ site. but I am happy to accept pull requests, so if you want to add stuff like t
 so you might want to port this to iOS or desktop OSes.
 
 note: I've only used this on a Nexus 4, so although I think it should be fine on other devices, I'm not sure
+also, I've only tried this with firmware version v2.43 – 2.47, so it may not work with other versions
