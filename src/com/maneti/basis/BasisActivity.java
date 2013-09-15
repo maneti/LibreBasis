@@ -64,21 +64,7 @@ public class BasisActivity extends Activity implements Runnable {
 					public Packet.Command type = Packet.Command.Response_GetPulseDataContainer;
 					public void Handle(Packet packet) {
 						if(packet.type == this.type){
-							Calendar cal = Calendar.getInstance();
-							
-							File file = new File(Environment.getExternalStorageDirectory() + "/basis/basis_raw_log_chunk_num_"+packet.value+"_"+(cal.getTime().toString()).replace("/", ".")+".log");
-							if (!file.exists()) {
-						        try {
-						            file.createNewFile();
-						            FileWriter filewriter = new FileWriter(file,false);
-						            filewriter.write(packet.content);
-						            filewriter.flush();
-						            filewriter.close();
-						            
-						        } catch (IOException e) {
-						            e.printStackTrace();
-						        }
-							}
+							new Decoder(packet.content).save();
 						}
 					}
 				}
@@ -89,10 +75,11 @@ public class BasisActivity extends Activity implements Runnable {
 					public void Handle(Packet packet) {
 						if(packet.type == this.type){
 							for(int i = 0; i < packet.value; i ++){
-								networkThread.toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataContainer, Packet.reverseBytes(Packet.paddToLength(Packet.paddToByte(Integer.toHexString(i)), 2 ))));
+								networkThread.toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataContainer, Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(i)), 2 ))));
 								networkThread.toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataContainer));
-								networkThread.toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));
+								//networkThread.toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));
 							}
+							networkThread.toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
 						}
 					}
 				}
@@ -129,7 +116,8 @@ public class BasisActivity extends Activity implements Runnable {
 		scrollView.addView(myText);
 		myText.setText(log);
 		setContentView(scrollView);
-		
+		Decoder d = new Decoder("");
+		//d.decodeFile(Environment.getExternalStorageDirectory() + "/basis/test.log");//only used for debugging
 	}
 	@Override
 	public void run() {
@@ -207,7 +195,7 @@ public class BasisActivity extends Activity implements Runnable {
 	    	
 	    	toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataNumContainers));
 	    	toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataNumBytes));
-	    	toSendSequence.add(new Packet(Packet.Command.Command_SetBluetoothDisconnectTimer, Packet.reverseBytes(Packet.paddToLength(Packet.paddToByte(Integer.toHexString(90)), 2 ))));
+	    	toSendSequence.add(new Packet(Packet.Command.Command_SetBluetoothDisconnectTimer, Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(90)), 2 ))));
 	    	toSendSequence.add(new Packet(Packet.Command.Command_EnterUploadMode));
 
 	    	toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));

@@ -48,16 +48,16 @@ public class Packet {
 	}
 	public void parseContent(){
 		if (type == Command.Response_GetPulseDataNumContainers ){
-			value = Long.parseLong(reverseBytes(content.substring(2,6)), 16);
+			value = Long.parseLong(Utils.reverseBytes(content.substring(2,6)), 16);
 		}
 		if (type == Command.Response_GetPulseDataNumBytes){
-			value = Long.parseLong(reverseBytes(content.substring(2)), 16);
+			value = Long.parseLong(Utils.reverseBytes(content.substring(2)), 16);
 		}
 		if ((type == Command.Command_GetPulseDataContainer || type == Command.Response_GetPulseDataContainer)){
 			if(content.length() >= 6){
-				value = Long.parseLong(reverseBytes(content.substring(2, 6)), 16);//container number
+				value = Long.parseLong(Utils.reverseBytes(content.substring(2, 6)), 16);//container number
 			} else {
-				value = Long.parseLong(reverseBytes(content.substring(0, 4)), 16);//container number
+				value = Long.parseLong(Utils.reverseBytes(content.substring(0, 4)), 16);//container number
 			}
 		}
 	}
@@ -84,59 +84,7 @@ public class Packet {
 		}
 		return this.type.toString();
 	 }
-	 String bytArrayToHex(byte[] a, int length) {
-  	   StringBuilder sb = new StringBuilder();
-  	   int index = 0;
-  	   for(byte b: a){
-  		   if(index>length){
-  			   break;
-  		   }
-  		   index+=1;
-  		   sb.append(String.format("%02x", b&0xff));
-  	   }
-  	   return sb.toString();
-  	}
-	  public byte[] hexStringToByteArray(String s) {
-	        int len = s.length();
-	        byte[] data = new byte[len / 2];
-	        for (int i = 0; i < len; i += 2) {
-	            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-	                                 + Character.digit(s.charAt(i+1), 16));
-	        }
-	        return data;
-	    }
-	public static String reverseBytes(String input){
-		String result = "";
-		for(int i = 0; i <= input.length()-2;i += 2){
-			result+=input.substring(input.length()-(i+2), input.length()-i);
-		}
-		return result;
-	}
-	public static String paddToByte(String input){
-		 String output = input;
-		 if(input.length()%2 == 1){
-			 output = "0"+input;
-		 }
-		 return output;
-	}
-	public static String paddToLength(String input, int length){
-		 String output = input;
-		 while (output.length() / 2 < length){
-			 output="00"+output;
-		 }
-		 return output;
-	}
-	public static String createChecksum(String input){
-		int sum = 0;
-		for(int i = 0; i < input.length()-1; i += 2){
-			sum+=Integer.parseInt(input.charAt(i)+""+input.charAt(i+1), 16);
-		}
-		String hex = paddToByte(Integer.toHexString(sum));
-		if(hex.length()<4){
-			hex="00"+hex;
-		}
-		return reverseBytes(hex);
-	}
+	
 	public static String current = "";
 	public static int currentTotalLength = 0;
 	static boolean gotData = false;
@@ -149,10 +97,10 @@ public class Packet {
 		try{
 			while (true){
 				
-				totalLength = Integer.parseInt(reverseBytes(data.substring(header.length(), header.length() + sizeCharsLength*2)), 16);
+				totalLength = Integer.parseInt(Utils.reverseBytes(data.substring(header.length(), header.length() + sizeCharsLength*2)), 16);
 				Command type = Command.Unknown;
 				if(data.length()>=header.length() + sizeCharsLength*2+4){
-					type = parsePacketType(reverseBytes(data.substring(header.length() + sizeCharsLength*2,header.length() + sizeCharsLength*2+4)));
+					type = parsePacketType(Utils.reverseBytes(data.substring(header.length() + sizeCharsLength*2,header.length() + sizeCharsLength*2+4)));
 				}
 				int packetLength = totalLength+header.length()+trailer.length()+sizeCharsLength;
 				/*if(type == Command.Response_GetPulseDataContainer){
@@ -165,7 +113,7 @@ public class Packet {
 				if(data.length() > header.length() + sizeCharsLength*2+4 && type == Command.Unknown ){
 					data = data.substring(data.indexOf("abaa")+2);
 					if(data.length() > header.length() + sizeCharsLength*2){
-						totalLength = Integer.parseInt(reverseBytes(data.substring(header.length(), header.length() + sizeCharsLength*2)), 16);
+						totalLength = Integer.parseInt(Utils.reverseBytes(data.substring(header.length(), header.length() + sizeCharsLength*2)), 16);
 						packetLength = totalLength+header.length()+trailer.length()+sizeCharsLength;
 					}
 				}
@@ -205,11 +153,11 @@ public class Packet {
 	
 	public void send(OutputStream stream){
 		 String command = Integer.toHexString(getForValuetName(this.type));
-		 command = reverseBytes(paddToByte(command));
-		 String checksum = createChecksum(command+content);
-		 String lengthByte = reverseBytes(paddToByte(Integer.toHexString((content.length()+checksum.length())/2)));
-		 byte[] sendBuffer = hexStringToByteArray((header + reverseBytes(paddToLength(lengthByte, 3)) + command+content+checksum+trailer).toUpperCase(Locale.CANADA));
-	     String asHex = bytArrayToHex(sendBuffer, sendBuffer.length);
+		 command = Utils.reverseBytes(Utils.paddToByte(command));
+		 String checksum = Utils.createChecksum(command+content);
+		 String lengthByte = Utils.reverseBytes(Utils.paddToByte(Integer.toHexString((content.length()+checksum.length())/2)));
+		 byte[] sendBuffer = Utils.hexStringToByteArray((header + Utils.reverseBytes(Utils.paddToLength(lengthByte, 3)) + command+content+checksum+trailer).toUpperCase(Locale.CANADA));
+	     String asHex = Utils.bytArrayToHex(sendBuffer, sendBuffer.length);
          Log.v("sending packet:" +this.toString(), asHex);
         try {
         	stream.write(sendBuffer);
