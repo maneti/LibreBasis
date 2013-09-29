@@ -1,0 +1,13 @@
+this is roughly what the JSON output format looks like (although it should be easy to see by looking at the data):
+
+{
+  block // the block number supplied by the watch, 0-N, each time you sync this counter gets reset
+  <Timestamp string>:{ //map of standard android human readable timestamps, should be one for each minute we have data for
+    "heart rate":[], // array of heart rates as ints, should be one per second so this array is 60 elements long
+    "galvanic": "",// the galvanic data for the current minute, should be a an array of readings, but I don't know how to decode it yet, so it's currently just the raw hex string
+    "accelerometer": [ //accelerometer readings for the current minute, normally 3 readings per second, so 180 per minute
+      [z,x,y] //an accelerometer reading, array of 3 values, pretty sure the thrid is the y axis, but not sure which is x and z out of the first two. since each value is only one hex char, I'm not sure how negitive values are represented, possibly values > 7 are negitive but not sure yet
+    ],
+    temperature:[] //array of ints, the temperature readings for the current minute, 8 readings per minute, stored in fahrenheit 
+  }
+}
