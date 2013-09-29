@@ -64,6 +64,21 @@ public class BasisActivity extends Activity implements Runnable {
 					public Packet.Command type = Packet.Command.Response_GetPulseDataContainer;
 					public void Handle(Packet packet) {
 						if(packet.type == this.type){
+							 Calendar cal = Calendar.getInstance();
+							   //at some point I should make this UI option
+				               /*File file = new File(Environment.getExternalStorageDirectory() + "/basis/basis_raw_log_chunk_num_"+packet.value+"_"+(cal.getTime().toString()).replace("/", ".")+".log");
+				               if (!file.exists()) {
+				                     try {
+				                         file.createNewFile();
+				                         FileWriter filewriter = new FileWriter(file,false);
+				                         filewriter.write(packet.content);
+				                         filewriter.flush();
+				                         filewriter.close();
+				                         
+				                     } catch (IOException e) {
+				                         e.printStackTrace();
+				                     }
+				               }*/
 							new Decoder(packet.content).save();
 						}
 					}
@@ -116,7 +131,7 @@ public class BasisActivity extends Activity implements Runnable {
 		scrollView.addView(myText);
 		myText.setText(log);
 		setContentView(scrollView);
-		Decoder d = new Decoder("");
+		//Decoder d = new Decoder("");
 		//d.decodeFile(Environment.getExternalStorageDirectory() + "/basis/test.log");//only used for debugging
 	}
 	@Override
