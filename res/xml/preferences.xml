@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:background="#041A37"
+    >
+    <CheckBoxPreference
+        android:key="pref_delete"
+        android:title="delete after sync"
+        android:summary="delete data from the watch after it is saved to file (will not delete if the sync fails to complete)"
+        android:defaultValue="true" />
+     <PreferenceCategory 
+        android:title="Output settings"
+        android:key="pref_key_output_settings">
+	     <CheckBoxPreference
+	        android:key="pref_json"
+	        android:title="Output as JSON file"
+	        android:summary="Output log data in JSON format."
+	        android:defaultValue="true" />
+	     <CheckBoxPreference
+	        android:key="pref_csv"
+	        android:title="Output as CSV file"
+	        android:summary="Output log data in CSV (comma seperated value) format. (warning, this format takes a lot of space)"
+	        android:defaultValue="false" />
+	      <CheckBoxPreference
+	        android:key="pref_raw"
+	        android:title="Output as raw hex file"
+	        android:summary="Output log data in raw hex format. (useful for debugging)"
+	        android:defaultValue="false" />
+    </PreferenceCategory>
+</PreferenceScreen>
