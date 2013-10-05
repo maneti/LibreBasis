@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Locale;
 
 import android.util.Log;
-//maybe have aa as 'packet' start and ab as 'packet' end? 
 public class Packet {
 
 	
@@ -24,7 +23,6 @@ public class Packet {
 		
 		try{
 			lengthBytes = Long.parseLong(data.substring(header.length(), header.length()+2),16);
-			//boolean isCommand = s.matches(0[0-9A-F]0000);
 			String value = data.substring(header.length()+6, header.length() + 10);
 			value = value.substring(2,4)+value.substring(0,2);
 			this.type = parsePacketType(value);
@@ -35,7 +33,6 @@ public class Packet {
 		}
 	}
 	public Packet(Command packetType){
-		//content = leftMap.get(packetType) + commands.get(packetType);
 		type = packetType;
 	}
 	public Packet(Command packetType, String value){
@@ -93,7 +90,6 @@ public class Packet {
 		data = data.substring(0, data.length()-2);
 		int totalLength = 0;
 		List<Packet> packets = new ArrayList<Packet>();
-		//assuming first byte is AA... maybe bad assumption...
 		try{
 			while (true){
 				
@@ -103,13 +99,6 @@ public class Packet {
 					type = parsePacketType(Utils.reverseBytes(data.substring(header.length() + sizeCharsLength*2,header.length() + sizeCharsLength*2+4)));
 				}
 				int packetLength = totalLength+header.length()+trailer.length()+sizeCharsLength;
-				/*if(type == Command.Response_GetPulseDataContainer){
-					packetLength+=0;
-				}
-				if(gotData){
-					Log.v("current data: ",data);
-					Log.v("type : ",type.toString());
-				}*/
 				if(data.length() > header.length() + sizeCharsLength*2+4 && type == Command.Unknown ){
 					data = data.substring(data.indexOf("abaa")+2);
 					if(data.length() > header.length() + sizeCharsLength*2){
@@ -117,12 +106,6 @@ public class Packet {
 						packetLength = totalLength+header.length()+trailer.length()+sizeCharsLength;
 					}
 				}
-				/*if(gotData){
-					Log.v("current data: ",data);
-					Log.v("type : ",type.toString());
-				}
-				Log.v("inner length: ",totalLength+"");
-				Log.v("outer length: ",packetLength+"");*/
 				if((data.length()/2) >= packetLength){
 					Log.v("total data: ",data);
 					Log.v("packet data: ",data.substring(0,packetLength*2));
@@ -135,7 +118,7 @@ public class Packet {
 				}
 				else {
 					if(data.length()>=2){
-						current = data;//.substring(0, data.length()-2);
+						current = data;
 						currentTotalLength = totalLength;
 					} else{
 						current = "";
@@ -167,33 +150,29 @@ public class Packet {
 	}
 	
 	public enum Command{
-		
-	  Unknown,NullType,PresenceBroadcast,
-	   Command_SetClock,Command_SmartErase,Command_ForceErase,
-	  Command_SetDeviceProfile,Command_SetUserProfile,Command_SetUploaderData,
-	  Command_SealUploaderData,Command_SetDataValidationMode,
-	  Command_SetDataValidationADCSet,Command_SetDataStreamMode,Command_BootloaderEnter,
-	  Command_ResetPerservedRAM,Command_SetActivityManualGoal,Command_SetBluetoothDisconnectTimer,
-	   Command_SetBluetoothReconnectSchedule,Command_SetTimeFormat,Command_EnterUploadMode,
-	   Response_SetClock,Response_SmartErase,Response_ForceErase,Response_SetDeviceProfile,
+		Unknown,NullType,PresenceBroadcast, Command_SetClock,Command_SmartErase,Command_ForceErase,
+		Command_SetDeviceProfile,Command_SetUserProfile,Command_SetUploaderData, Command_SealUploaderData,Command_SetDataValidationMode,
+		Command_SetDataValidationADCSet,Command_SetDataStreamMode,Command_BootloaderEnter,
+		Command_ResetPerservedRAM,Command_SetActivityManualGoal,Command_SetBluetoothDisconnectTimer,
+		Command_SetBluetoothReconnectSchedule,Command_SetTimeFormat,Command_EnterUploadMode,
+		Response_SetClock,Response_SmartErase,Response_ForceErase,Response_SetDeviceProfile,
 	    Response_SetUserProfile,Response_SetUploaderData,Response_SealUploaderData,
 	    Response_SetDataValidationMode,Response_SetDataValidationADCSe,Response_SetDataStreamMode,
 	    Response_BootloaderEnter,Response_ResetPerservedRAM,Response_SetActivityManualGoal,
-	  Response_SetBluetoothDisconnectTimer,Response_SetBluetoothReconnectSchedule,Response_SetTimeFormat,
-	 Response_EnterUploadMode,Command_GetClock,Command_GetPulseDataNumBytes,
-	 Command_GetPulseDataNumContainers,Command_GetPulseDataContainer,
-	   Command_GetFirmwareVersion,Command_GetDeviceProfile,Command_GetUserProfile,
-	 Command_GetUploaderData,Command_GetEraseStatus,Command_GetBatteryLevel,
-	   Command_GetBluetoothAddress,Command_GetTimeFormat,Command_GetActivityGoal,
-	Command_GetBluetoothSyncSchedule,Command_GetBluetoothModuleInfo,
-	 Response_GetClock,Response_GetPulseDataNumBytes,Response_GetPulseDataNumContainers,
-	Response_GetPulseDataContainer,Response_GetFirmwareVersion,Response_GetDeviceProfile,
-	Response_GetUserProfile,Response_GetUploaderData,Response_GetEraseStatus,
-	 Response_GetBatteryLevel,Response_GetBluetoothAddress,Response_GetTimeFormat,
-	  Response_GetActivityGoal,Response_GetBluetoothSyncSchedule,Response_GetBluetoothModuleInfo,
-	  Unrecognized_0xFE00,Boot_Command_ExitBootloader,Boot_Command_WriteApplication,Boot_Response,
-	Boot_Command_EraseApplication,OldBoot_Command_EnterBootloader,
-	Response_SetDataValidationADCSet
+	    Response_SetBluetoothDisconnectTimer,Response_SetBluetoothReconnectSchedule,Response_SetTimeFormat,
+	    Response_EnterUploadMode,Command_GetClock,Command_GetPulseDataNumBytes,
+	    Command_GetPulseDataNumContainers,Command_GetPulseDataContainer,
+	    Command_GetFirmwareVersion,Command_GetDeviceProfile,Command_GetUserProfile,
+	    Command_GetUploaderData,Command_GetEraseStatus,Command_GetBatteryLevel,
+	    Command_GetBluetoothAddress,Command_GetTimeFormat,Command_GetActivityGoal,
+	    Command_GetBluetoothSyncSchedule,Command_GetBluetoothModuleInfo,
+	    Response_GetClock,Response_GetPulseDataNumBytes,Response_GetPulseDataNumContainers,
+		Response_GetPulseDataContainer,Response_GetFirmwareVersion,Response_GetDeviceProfile,
+		Response_GetUserProfile,Response_GetUploaderData,Response_GetEraseStatus,
+		Response_GetBatteryLevel,Response_GetBluetoothAddress,Response_GetTimeFormat,
+	 	Response_GetActivityGoal,Response_GetBluetoothSyncSchedule,Response_GetBluetoothModuleInfo,
+	 	Unrecognized_0xFE00,Boot_Command_ExitBootloader,Boot_Command_WriteApplication,Boot_Response,
+		Boot_Command_EraseApplication,OldBoot_Command_EnterBootloader, Response_SetDataValidationADCSet
 	}
 
 	public static Command getNameForValue(int value)

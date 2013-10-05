@@ -4,5 +4,12 @@
     <string name="app_name">LibreBasis</string>
     <string name="hello_world"></string>
     <string name="menu_settings">Settings</string>
-
+    
+    <string name="pref_delete">pref_delete</string>
+    <string name="pref_auto_sync">pref_auto_sync</string>
+    <string name="pref_interval">pref_interval</string>
+    <string name="pref_boot">pref_boot</string>
+    <string name="pref_json">pref_json</string>
+    <string name="pref_csv">pref_csv</string>
+    <string name="pref_raw">pref_raw</string>
 </resources>

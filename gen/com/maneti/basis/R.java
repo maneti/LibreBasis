@@ -9,19 +9,31 @@ package com.maneti.basis;
 
 public final class R {
     public static final class attr {
+        /** <p>Must be an integer value, such as "<code>100</code>".
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+         */
+        public static final int min=0x7f010000;
     }
     public static final class drawable {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int force_erase=0x7f080004;
+        public static final int force_erase=0x7f080007;
         public static final int logView=0x7f080001;
         public static final int mainView=0x7f080000;
-        public static final int menu_settings=0x7f080002;
-        public static final int set_time=0x7f080003;
+        public static final int menu_settings=0x7f080004;
+        public static final int number_picker=0x7f080003;
+        public static final int pair=0x7f080006;
+        public static final int set_time=0x7f080005;
+        public static final int text_dialog_message=0x7f080002;
     }
     public static final class layout {
         public static final int activity_basis=0x7f030000;
+        public static final int preference_number_picker_dialog=0x7f030001;
     }
     public static final class menu {
         public static final int activity_basis=0x7f070000;
@@ -30,6 +42,13 @@ public final class R {
         public static final int app_name=0x7f050000;
         public static final int hello_world=0x7f050001;
         public static final int menu_settings=0x7f050002;
+        public static final int pref_auto_sync=0x7f050004;
+        public static final int pref_boot=0x7f050006;
+        public static final int pref_csv=0x7f050008;
+        public static final int pref_delete=0x7f050003;
+        public static final int pref_interval=0x7f050005;
+        public static final int pref_json=0x7f050007;
+        public static final int pref_raw=0x7f050009;
     }
     public static final class style {
         /** 
@@ -62,4 +81,41 @@ public final class R {
     public static final class xml {
         public static final int preferences=0x7f040000;
     }
+    public static final class styleable {
+        /**  note: to re-use an existing Android attribute not already used by the superclass, name should have prefix "android:" and do not define a format 
+           <p>Includes the following attributes:</p>
+           <table>
+           <colgroup align="left" />
+           <colgroup align="left" />
+           <tr><th>Attribute</th><th>Description</th></tr>
+           <tr><td><code>{@link #NumberPickerDialogPreference_android_max com.maneti.basis:android_max}</code></td><td></td></tr>
+           <tr><td><code>{@link #NumberPickerDialogPreference_min com.maneti.basis:min}</code></td><td></td></tr>
+           </table>
+           @see #NumberPickerDialogPreference_android_max
+           @see #NumberPickerDialogPreference_min
+         */
+        public static final int[] NumberPickerDialogPreference = {
+            0x01010136, 0x7f010000
+        };
+        /**
+          <p>This symbol is the offset where the {@link com.maneti.basis.R.attr#android_max}
+          attribute's value can be found in the {@link #NumberPickerDialogPreference} array.
+          @attr name android:android_max
+        */
+        public static final int NumberPickerDialogPreference_android_max = 0;
+        /**
+          <p>This symbol is the offset where the {@link com.maneti.basis.R.attr#min}
+          attribute's value can be found in the {@link #NumberPickerDialogPreference} array.
+
+
+          <p>Must be an integer value, such as "<code>100</code>".
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+          @attr name android:min
+        */
+        public static final int NumberPickerDialogPreference_min = 1;
+    };
 }
