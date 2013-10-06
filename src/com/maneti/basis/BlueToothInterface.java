@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -15,7 +16,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
@@ -30,7 +34,12 @@ public class BlueToothInterface {
 	private final static int REQUEST_ENABLE_BT = 1;
 	final Handler listenHandler = new Handler();
 	BluetoothAdapter mBluetoothAdapter;
+	BasisActivity mainActivity;
 	ArrayList<Packet> packets = new ArrayList<Packet>();
+	public static String deviceName = "Basis B1";
+	UUID uid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+	static List<Packet> toSendSequence = new ArrayList<Packet>();
+	static List<Packet> toReceiveSequence = new ArrayList<Packet>();
 	final Handler timeoutHandler = new Handler();
     final Runnable cancelTask = new Runnable(){
     	public void run(){
@@ -41,20 +50,21 @@ public class BlueToothInterface {
     
     public BlueToothInterface(){
     	mBluetoothAdapter =  BluetoothAdapter.getDefaultAdapter();
+    	mainActivity = BasisActivity.instance;
     	if (mBluetoothAdapter == null) {
 		    // Device does not support Bluetooth
-			BasisActivity.log+=System.getProperty("line.separator")+"No Bluetooth? this app will not work! ";
+    		mainActivity.Log("No Bluetooth? this app will not work!");
 		}
 		if (!mBluetoothAdapter.isEnabled()) {
 		    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-		    BasisActivity.instance.startActivityForResult(enableBtIntent, BlueToothInterface.REQUEST_ENABLE_BT);
+		    mainActivity.startActivityForResult(enableBtIntent, BlueToothInterface.REQUEST_ENABLE_BT);
 		}
     	handlers.add(
 			new PacketHandler(){
 				public Packet.Command type = Packet.Command.Response_GetPulseDataContainer;
 				public void Handle(Packet packet) {
 					if(packet.type == this.type){
-						if(BasisActivity.instance.prefs.getBoolean(BasisActivity.instance.getResources().getString(R.string.pref_raw), false)){
+						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_raw), false)){
 							 Calendar cal = Calendar.getInstance();
 				             File file = new File(Environment.getExternalStorageDirectory() + "/basis/basis_raw_log_chunk_num_"+packet.value+"_"+(cal.getTime().toString()).replace("/", ".")+".log");
 							 if (!file.exists()) {
@@ -70,10 +80,10 @@ public class BlueToothInterface {
 							    }
 							}
 						}
-						if(BasisActivity.instance.prefs.getBoolean(BasisActivity.instance.getResources().getString(R.string.pref_json), true)){
+						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_json), true)){
 							new Decoder(packet.content).save();
 						}
-						if(BasisActivity.instance.prefs.getBoolean(BasisActivity.instance.getResources().getString(R.string.pref_csv), true)){
+						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_csv), true)){
 							//todo
 						}
 					}
@@ -86,12 +96,13 @@ public class BlueToothInterface {
 				public void Handle(Packet packet) {
 					if(packet.type == this.type){
 						for(int i = 0; i < packet.value; i ++){
-							networkThread.toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataContainer, Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(i)), 2 ))));
-							networkThread.toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataContainer));
-							if(BasisActivity.instance.prefs.getBoolean(BasisActivity.instance.getResources().getString(R.string.pref_delete), true)){
-								networkThread.toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
-								networkThread.toReceiveSequence.add(new Packet(Packet.Command.Response_SmartErase));
-							}
+							toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataContainer, Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(i)), 2 ))));
+							toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataContainer));
+							
+						}
+						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_delete), true)){
+							toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
+							toReceiveSequence.add(new Packet(Packet.Command.Response_SmartErase));
 						}
 						//networkThread.toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
 					}
@@ -107,26 +118,61 @@ public class BlueToothInterface {
 		if (pairedDevices.size() > 0) {
 		    // Loop through paired devices
 		    for (BluetoothDevice device : pairedDevices) {
-		    	if(device.getName().equalsIgnoreCase("Basis B1")){
+		    	if(device.getName().equalsIgnoreCase(deviceName)){
 			    	text = device.getName() + " " + device.getAddress();
 			    	//Toast toast = Toast.makeText(context, text, duration);
 			    	//toast.show();
-			    	BasisActivity.log+=System.getProperty("line.separator")+"Found paired watch: "+text;
-			    	AcceptThread at = new AcceptThread();
-			    	at.start();
+			    	mainActivity.Log("Found paired watch: "+text);
+			    	Listen();
 		    	}
 		    }
+		} else{
+			mainActivity.Log("No paired watch found.");
 		}
     }
-    
-    public void Pair(){
-    	//todo implement pairing
+    public void Listen(){
+    	AcceptThread at = new AcceptThread();
+    	at.start();
     }
+    public void Pair(){
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        mainActivity.registerReceiver(mReceiver, filter);
+        filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        mainActivity.registerReceiver(mReceiver, filter);
+        mBluetoothAdapter.startDiscovery();
+        mainActivity.Log("Searching for watch. Remember to put it in pairing mode");
+    }
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (device.getBondState() != BluetoothDevice.BOND_BONDED && device.getName().equalsIgnoreCase(deviceName)) {
+                	String text = device.getName() + " " + device.getAddress();
+			    	mainActivity.Log("Found unpaired watch: "+text);
+			    	try {
+			            Log.d("pairDevice()", "Start Pairing...");
+			            Method m = device.getClass().getMethod("createBond", (Class[]) null);
+			            m.invoke(device, (Object[]) null);
+			            Log.d("pairDevice()", "Pairing finished.");
+			        } catch (Exception e) {
+			            Log.e("pairDevice()", e.getMessage());
+			        }
+                }
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+            	mainActivity.Log("Done searching for watches.");
+            }
+        }
+    };
     public void SetTime(int year, int month, int day, int hour, int minute){
     	//todo implement setting time
     }
     public void ForceDelete(){
-    	//todo implement force erase
+		toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
+
+    	toReceiveSequence.add(new Packet(Packet.Command.Response_SmartErase));
+    	Listen();
     }
 	private class AcceptThread extends Thread {
 	    private final BluetoothServerSocket mmServerSocket;
@@ -137,8 +183,10 @@ public class BlueToothInterface {
 	        BluetoothServerSocket tmp = null;
 	        try {
 	            // MY_UUID is the app's UUID string, also used by the client code
-	            tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord("basis", UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
-	        } catch (IOException e) { }
+	            tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord("basis", uid);
+	        } catch (IOException e) { 
+	        	int i =0;
+	        }
 	        mmServerSocket = tmp;
 	    }
 	 
@@ -175,28 +223,30 @@ public class BlueToothInterface {
 	        } catch (IOException e) { }
 	    }
 	}
+	public void Download(){
+		toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataNumContainers));
+    	toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataNumBytes));
+    	toSendSequence.add(new Packet(Packet.Command.Command_SetBluetoothDisconnectTimer, Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(90)), 2 ))));
+    	toSendSequence.add(new Packet(Packet.Command.Command_EnterUploadMode));
+
+    	toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));
+    	toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataNumContainers));
+    	toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataNumBytes));
+    	toReceiveSequence.add(new Packet(Packet.Command.Response_SetBluetoothDisconnectTimer));
+    	toReceiveSequence.add(new Packet(Packet.Command.Response_EnterUploadMode));
+	}
 	private class ConnectedThread extends Thread {
 	    private final BluetoothSocket mmSocket;
 	    private final InputStream mmInStream;
 	    private final OutputStream mmOutStream;
 
-	    public void updateLog(String newLine){
-	    	BasisActivity.log+=System.getProperty("line.separator")+ newLine;
-	    	BasisActivity.instance.updateHandler.post(BasisActivity.instance);
-	    }
+	  
 	    public ConnectedThread(BluetoothSocket socket) {
 	    	networkThread = this;
+	    	if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_download), true)){
+	    		Download();
+			}
 	    	
-	    	toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataNumContainers));
-	    	toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataNumBytes));
-	    	toSendSequence.add(new Packet(Packet.Command.Command_SetBluetoothDisconnectTimer, Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(90)), 2 ))));
-	    	toSendSequence.add(new Packet(Packet.Command.Command_EnterUploadMode));
-
-	    	toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));
-	    	toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataNumContainers));
-	    	toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataNumBytes));
-	    	toReceiveSequence.add(new Packet(Packet.Command.Response_SetBluetoothDisconnectTimer));
-	    	toReceiveSequence.add(new Packet(Packet.Command.Response_EnterUploadMode));
 	    	
 	        mmSocket = socket;
 	        InputStream tmpIn = null;
@@ -225,23 +275,24 @@ public class BlueToothInterface {
 	    	   return sb.toString();
 	    	}
 
-	    List<Packet> toSendSequence = new ArrayList<Packet>();
-	    List<Packet> toReceiveSequence = new ArrayList<Packet>();
+	   
 	    public Packet processNextPacket(Packet packet){
-	    	if(nextResponsePacketIndex < toReceiveSequence.size() && toReceiveSequence.get(nextResponsePacketIndex).type == packet.type){
-	    		nextResponsePacketIndex+=1;
-	    		if(nextResponsePacketIndex <= toSendSequence.size()){
-	    			return toSendSequence.get(nextResponsePacketIndex-1);
+	    	if(toReceiveSequence.size() > 0 && toReceiveSequence.get(0).type == packet.type){
+	    		Packet current = toReceiveSequence.get(0);
+	    		toReceiveSequence.remove(current);
+	    		if(toSendSequence.size() > 0){
+	    			Packet next = toSendSequence.get(0);
+	    			toSendSequence.remove(next);
+	    			return next;
 	    		}
 	    	}
 	    	return null;
 	    }
-	    int nextResponsePacketIndex = 0;
 	    public void processNewPackets(List<Packet> newPackets){
 	    	if(newPackets.size() > 0){
             	for(Packet packet :newPackets){
                 	packets.add(packet);
-                	updateLog("Got packet: "+ packet.toString());
+                	mainActivity.Log("Got packet: "+ packet.toString());
                 	Log.v("got packet: ", packet.toString());
                 	for(PacketHandler handler : handlers){
                 		handler.Handle(packet);
@@ -249,7 +300,7 @@ public class BlueToothInterface {
             		Packet toSend = processNextPacket(packet);
             		if(toSend != null){
             			toSend.send(mmOutStream);
-            			updateLog("Sending packet: "+toSend.toString());
+            			mainActivity.Log("Sending packet: "+toSend.toString());
             		}
             	}
             }
@@ -276,8 +327,6 @@ public class BlueToothInterface {
 	                	processNewPackets(got);
 	                	totalSinceLastPacket=0;
 	                }
-	               // totalSinceLastPacket+=bytes;
-	               // Log.v("current part:",Packet.current);
 	                
 	                Log.v("totalSinceLastPacket:",totalSinceLastPacket+"");
 	                Log.v("expected:",Packet.currentTotalLength+"");

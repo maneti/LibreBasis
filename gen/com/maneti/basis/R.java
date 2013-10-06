@@ -46,6 +46,7 @@ containing a value of this type.
         public static final int pref_boot=0x7f050006;
         public static final int pref_csv=0x7f050008;
         public static final int pref_delete=0x7f050003;
+        public static final int pref_download=0x7f05000a;
         public static final int pref_interval=0x7f050005;
         public static final int pref_json=0x7f050007;
         public static final int pref_raw=0x7f050009;

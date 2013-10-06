@@ -5,9 +5,14 @@
     xmlns:custom="http://schemas.android.com/apk/res-auto"
     >
     <CheckBoxPreference
+        android:key="@string/pref_download"
+        android:title="Download data"
+        android:summary="Download any data from a watch when connected"
+        android:defaultValue="true" />
+    <CheckBoxPreference
         android:key="@string/pref_delete"
         android:title="Delete after sync"
-        android:summary="Delete data from the watch after it is saved to file"
+        android:summary="Delete data from the watch after it is saved to file (will not delete if the sync fails to complete)"
         android:defaultValue="true" />
     <CheckBoxPreference
         android:key="@string/pref_auto_sync"

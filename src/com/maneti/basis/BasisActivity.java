@@ -59,6 +59,13 @@ public class BasisActivity extends Activity implements Runnable {
 		//d.decodeFile(Environment.getExternalStorageDirectory() + "/basis/test.log");//only used for debugging
 		
 	}
+	public void Log(String newLine){
+		updateLog(newLine);
+	}
+	 public void updateLog(String newLine){
+    	BasisActivity.log+=System.getProperty("line.separator")+ newLine;
+    	updateHandler.post(this);
+    }
 	boolean inSettings = false;
 	@Override
 	public void onBackPressed() {

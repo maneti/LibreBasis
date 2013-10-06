@@ -14,7 +14,7 @@
         android:id="@+id/pair"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:title="Pair with a new Watch"/>
+        android:title="Pair with a new watch"/>
       <item
         android:id="@+id/force_erase"
         android:orderInCategory="100"
