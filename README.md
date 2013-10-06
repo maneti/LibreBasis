@@ -19,7 +19,10 @@ I currently only parse heart rate, temperature and accelerometer. I've left the 
 There are a few other small bits of data that I don't parse (because I have no idea what they are yet)
 Heart rate and temperature simple, because they are just numbers, accelerometer is much harder because it's raw accelerometer force data, so it might be hard to figure out steps from it... another thing to to...
 
+See the JSON format spec file for more details about the output format.
+I intend allow outputing as csv soon too.
 
+There are a number of options in the settings menu, only some of these have been implemented yet, but I plan to implement the others over the next couple of weeks
 
 known issues:
 1: if the socket bind fails the app will FC (for now manualy turning off and on bluetooth normally fixes this, in the future
