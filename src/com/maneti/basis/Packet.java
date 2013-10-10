@@ -3,6 +3,7 @@ package com.maneti.basis;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -18,9 +19,11 @@ public class Packet {
 	long value = 0;
 	String raw = "";
 	public static int sizeCharsLength = 3;
+	Calendar created;
+	Object data;
 	public Packet(String data){
 		raw = new String(data);
-		
+		created = Calendar.getInstance();
 		try{
 			lengthBytes = Long.parseLong(data.substring(header.length(), header.length()+2),16);
 			String value = data.substring(header.length()+6, header.length() + 10);
@@ -34,11 +37,33 @@ public class Packet {
 	}
 	public Packet(Command packetType){
 		type = packetType;
+		created = Calendar.getInstance();
 	}
 	public Packet(Command packetType, String value){
+		created = Calendar.getInstance();
 		content = value;
 		type = packetType;
 		parseContent();
+	}
+	public Packet(Command packetType, Object value){
+		created = Calendar.getInstance();
+		data = value;
+		type = packetType;
+	}
+	public void Prepare(){
+		if (type == Command.Command_SetClock ){
+			Calendar now = Calendar.getInstance();
+			int diff = (int)((created.getTimeInMillis() - now.getTimeInMillis() )/1000);
+			Calendar time = (Calendar) this.data;
+			time.add(Calendar.SECOND, (int)diff);
+			Calendar start = Calendar.getInstance();
+			start.set(2011, 0, 1);
+			int val = (int)((time.getTimeInMillis() - start.getTimeInMillis())/1000);
+			int offset = time.getTimeZone().getOffset(time.getTimeInMillis())/1000/60;
+			String counter = Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(val)),4));
+			String offsetString = Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(offset)),2));
+			content = counter+offsetString ;
+		}
 	}
 	public static Command parsePacketType(String value){
 		return getNameForValue(Integer.parseInt(value, 16));
@@ -51,6 +76,13 @@ public class Packet {
 			value = Long.parseLong(Utils.reverseBytes(content.substring(2)), 16);
 		}
 		if ((type == Command.Command_GetPulseDataContainer || type == Command.Response_GetPulseDataContainer)){
+			if(content.length() >= 6){
+				value = Long.parseLong(Utils.reverseBytes(content.substring(2, 6)), 16);//container number
+			} else {
+				value = Long.parseLong(Utils.reverseBytes(content.substring(0, 4)), 16);//container number
+			}
+		}
+		if ((type == Command.Command_SetTimeFormat)){
 			if(content.length() >= 6){
 				value = Long.parseLong(Utils.reverseBytes(content.substring(2, 6)), 16);//container number
 			} else {
@@ -137,6 +169,7 @@ public class Packet {
 	public void send(OutputStream stream){
 		 String command = Integer.toHexString(getForValuetName(this.type));
 		 command = Utils.reverseBytes(Utils.paddToByte(command));
+		 this.Prepare();
 		 String checksum = Utils.createChecksum(command+content);
 		 String lengthByte = Utils.reverseBytes(Utils.paddToByte(Integer.toHexString((content.length()+checksum.length())/2)));
 		 byte[] sendBuffer = Utils.hexStringToByteArray((header + Utils.reverseBytes(Utils.paddToLength(lengthByte, 3)) + command+content+checksum+trailer).toUpperCase(Locale.CANADA));

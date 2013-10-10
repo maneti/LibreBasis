@@ -167,6 +167,11 @@ public class BlueToothInterface {
     };
     public void SetTime(int year, int month, int day, int hour, int minute){
     	//todo implement setting time
+    	Calendar time = Calendar.getInstance();
+    	time.set(year, month, day, hour, minute);
+    	toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));
+    	toSendSequence.add(new Packet(Packet.Command.Command_SetClock, time));
+
     }
     public void ForceDelete(){
 		toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
