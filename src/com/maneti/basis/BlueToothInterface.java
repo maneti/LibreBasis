@@ -1,16 +1,27 @@
 package com.maneti.basis;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -22,6 +33,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Environment;
 import android.os.Handler;
+import android.text.format.DateFormat;
 import android.util.Log;
 
 public class BlueToothInterface {
@@ -38,6 +50,8 @@ public class BlueToothInterface {
 	ArrayList<Packet> packets = new ArrayList<Packet>();
 	public static String deviceName = "Basis B1";
 	UUID uid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+	ArrayList<String> tempFiles = new ArrayList<String>();
+	int numberOfBlocks = -1;
 	static List<Packet> toSendSequence = new ArrayList<Packet>();
 	static List<Packet> toReceiveSequence = new ArrayList<Packet>();
 	final Handler timeoutHandler = new Handler();
@@ -64,27 +78,23 @@ public class BlueToothInterface {
 				public Packet.Command type = Packet.Command.Response_GetPulseDataContainer;
 				public void Handle(Packet packet) {
 					if(packet.type == this.type){
-						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_raw), false)){
-							 Calendar cal = Calendar.getInstance();
-				             File file = new File(Environment.getExternalStorageDirectory() + "/basis/basis_raw_log_chunk_num_"+packet.value+"_"+(cal.getTime().toString()).replace("/", ".")+".log");
-							 if (!file.exists()) {
-							 	try {
-							    	file.createNewFile();
-							        FileWriter filewriter = new FileWriter(file,false);
-						            filewriter.write(packet.content);
-						            filewriter.flush();
-						            filewriter.close();
-							             
-							    } catch (IOException e) {
-							    	e.printStackTrace();
-							    }
-							}
+						 Calendar cal = Calendar.getInstance();
+						 String fileName = Environment.getExternalStorageDirectory() + "/basis/basis_raw_log_chunk_num_"+packet.value+"_"+(cal.getTime().toString()).replace("/", ".")+".log";
+			             File file = new File(fileName);
+						 if (!file.exists()) {
+						 	try {
+						    	file.createNewFile();
+						        FileWriter filewriter = new FileWriter(file,false);
+					            filewriter.write(packet.content);
+					            filewriter.flush();
+					            filewriter.close();
+					            tempFiles.add(fileName);
+						    } catch (IOException e) {
+						    	e.printStackTrace();
+						    }
 						}
-						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_json), true)){
-							new Decoder(packet.content).save();
-						}
-						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_csv), true)){
-							//todo
+						if(numberOfBlocks == tempFiles.size()){
+							new ProcessThread().run();
 						}
 					}
 				}
@@ -104,11 +114,13 @@ public class BlueToothInterface {
 							toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
 							toReceiveSequence.add(new Packet(Packet.Command.Response_SmartErase));
 						}
+						numberOfBlocks = (int)packet.value;
 						//networkThread.toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
 					}
 				}
 			}
 		);
+		
 		
 		//Context context = getApplicationContext();
 		//int duration = Toast.LENGTH_SHORT;
@@ -179,6 +191,119 @@ public class BlueToothInterface {
     	toReceiveSequence.add(new Packet(Packet.Command.Response_SmartErase));
     	Listen();
     }
+    private class ProcessThread extends Thread {
+	    public ProcessThread() {
+	        
+	    }
+	 
+	    public void run() {
+	    	Decoder decoder = new Decoder();
+	    	for(String fileName : tempFiles){
+	    		File file = new File(fileName);
+	    		
+	    		StringBuilder sb = new StringBuilder();
+    	        String line = "";
+				try {
+					BufferedReader br = new BufferedReader(new FileReader(file));
+					line = br.readLine();
+					while (line != null) {
+		    	       	 sb.append(line);
+		    	       	 try {
+							line = br.readLine();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+	    	        }
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+    	        
+    	        decoder.decode(sb.toString());
+    	        if(!mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_raw), false)){
+    	        	file.delete();
+    	        }
+	    	}
+	    	Iterator<String> iter = decoder.root.keys();
+	    	List<String> minutes = new ArrayList<String>();
+    	    while (iter.hasNext()) {
+    	        String key = iter.next();
+    	        minutes.add(key);
+    	        //Object value = decoder.root.get(key);
+    	    }
+    	    Collections.sort(minutes);
+    	    String fileName = Environment.getExternalStorageDirectory() + "/basis/basis_log_"+minutes.get(0)+"_to_"+minutes.get(minutes.size()-1)+".json";
+    	    
+    	   
+			if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_json), true)){
+				File file = new File(fileName+".json");
+	    		if (!file.exists()) {
+	    	        try {
+	    	            file.createNewFile();
+	    	            FileWriter filewriter = new FileWriter(file,false);
+	    	            filewriter.write(decoder.root.toString());
+	    	            filewriter.flush();
+	    	            filewriter.close();
+	    	            
+	    	        } catch (IOException e) {
+	    	            e.printStackTrace();
+	    	        }
+	    		}
+			}
+			if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_csv), true)){
+				File file = new File(fileName+".csv");
+	    		if (!file.exists()) {
+	    	        try {
+	    	            file.createNewFile();
+	    	            FileWriter filewriter = new FileWriter(file,false);
+	    	            for(String key : minutes){
+	    	            	
+	    	            	 try {
+	    	            		Date time = Decoder.isoFormat.parse(key);
+								JSONObject minute = (JSONObject) decoder.root.get(key);
+								JSONArray heartRate = (JSONArray) minute.get("heart rate");
+								JSONArray accelerometer =  minute.get("accelerometer") == null ? null : (JSONArray) minute.get("accelerometer");
+								JSONArray temperature =  minute.get("temperature") == null ? null : (JSONArray) minute.get("temperature");
+								for(int i = 0; i < 60; i +=1){
+		    	            		time.setSeconds(i);
+		    	            		String line = "";
+		    	            		line+=Decoder.isoFormat.format(time)+",";
+		    	            		line+=heartRate.get(i)+",";
+		    	            		if(accelerometer!=null){
+		    	            			line+=accelerometer.get(i*3).toString().replace(",", "-")+","+accelerometer.get(i*3+1).toString().replace(",", "-")+","+accelerometer.get(i*3+2).toString().replace(",", "-")+",";
+		    	            		} else{
+		    	            			line+=",,,";
+		    	            		}
+		    	            		if(i%7==0 || i==59){
+		    	            			if(i%7==0){
+		    	            				line+=heartRate.get(i/7)+",";
+			    	            		} else{
+			    	            			line+=heartRate.get(7)+",";
+			    	            		}
+		    	            		} else{
+		    	            			line+=",";
+		    	            		}
+		    	            		filewriter.write(line+"\n");
+		    	            	}
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+	    	            	
+	    	            }
+	    	           
+	    	            filewriter.flush();
+	    	            filewriter.close();
+	    	            
+	    	        } catch (IOException e) {
+	    	            e.printStackTrace();
+	    	        }
+	    		}
+			}
+	    }
+	}
 	private class AcceptThread extends Thread {
 	    private final BluetoothServerSocket mmServerSocket;
 	 

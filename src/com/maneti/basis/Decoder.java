@@ -6,42 +6,24 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.os.Environment;
-import android.util.Log;
 
 public class Decoder {
-	String raw = "";
 	JSONObject currentMinute;
-	public Decoder(String input){
-		raw = input;
-	}
-	public void save(){
+	JSONObject root = new JSONObject();
+	public static final DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
+	public Decoder(){
 		min.set(2011, 0, 1);
 		max.set(2050, 0, 1);
-
-		JSONObject decoded = decode(raw.substring(6));
-		Calendar cal = Calendar.getInstance();
-		
-		File file = new File(Environment.getExternalStorageDirectory() + "/basis/basis_log_chunk_num_"+Integer.parseInt(Utils.reverseBytes(raw.substring(2,6)), 16)+"_"+(cal.getTime().toString()).replace("/", ".")+".json");
-		if (!file.exists()) {
-	        try {
-	            file.createNewFile();
-	            FileWriter filewriter = new FileWriter(file,false);
-	            filewriter.write(decoded.toString());
-	            filewriter.flush();
-	            filewriter.close();
-	            
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
-		}
 	}
+	
 	public static String convertStreamToString(InputStream is) throws Exception {
 	    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 	    StringBuilder sb = new StringBuilder();
@@ -89,9 +71,9 @@ public class Decoder {
 	        }
 		}
 	}
-	private JSONObject decode(String contents){
+	public JSONObject decode(String contents){
 		
-		JSONObject root = new JSONObject();
+		
 		String extra = "";
 		Calendar time = Calendar.getInstance();;
 		JSONObject timeContainer= new JSONObject();
@@ -130,7 +112,7 @@ public class Decoder {
 					timeContainer = root.getJSONObject(time.getTime().toString());
 				}
 				
-				root.put(time.getTime().toString(), timeContainer);
+				root.put(isoFormat.format(time.getTime()), timeContainer);
 				boolean partChunk = chunk.length() < 400;
 
 				String heartData = chunk.substring(chunk.length()-120);
@@ -222,7 +204,7 @@ public class Decoder {
 	}
 	JSONArray ParseAccelerometer(String data){
 		JSONArray processed = new JSONArray();
-		for (int i =0; i< data.length()-3; i+=3){
+		for (int i =0; i< data.length(); i+=3){
 			JSONArray threeAxis = new JSONArray();
 			threeAxis.put(Integer.parseInt(data.substring(i, i+1), 16));
 			threeAxis.put(Integer.parseInt(data.substring(i+1, i+2), 16));
@@ -234,7 +216,7 @@ public class Decoder {
 
 	JSONArray ParseHeartRate(String data){
 		JSONArray processed = new JSONArray();
-		for (int i =0; i< data.length()-2; i+=2){
+		for (int i =0; i< data.length(); i+=2){
 			processed.put(Integer.parseInt(data.substring(i, i+2), 16));	
 		}
 		return processed;
@@ -242,7 +224,7 @@ public class Decoder {
 
 	JSONArray ParseTemperature(String data){
 		JSONArray processed = new JSONArray();
-		for (int i =0; i< data.length()-2; i+=2){
+		for (int i =0; i< data.length(); i+=2){
 			processed.put(Integer.parseInt(data.substring(i, i+2), 16));	
 		}
 		return processed;
