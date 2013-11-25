@@ -94,7 +94,7 @@ public class BlueToothInterface {
 						    }
 						}
 						if(numberOfBlocks == tempFiles.size()){
-							new ProcessThread().run();
+							timeoutHandler.postDelayed(new ProcessThread(), 2000);
 						}
 					}
 				}
@@ -105,12 +105,14 @@ public class BlueToothInterface {
 				public Packet.Command type = Packet.Command.Response_GetPulseDataNumContainers;
 				public void Handle(Packet packet) {
 					if(packet.type == this.type){
+						//packet.value = 3;
 						for(int i = 0; i < packet.value; i ++){
 							toSendSequence.add(new Packet(Packet.Command.Command_GetPulseDataContainer, Utils.reverseBytes(Utils.paddToLength(Utils.paddToByte(Integer.toHexString(i)), 2 ))));
 							toReceiveSequence.add(new Packet(Packet.Command.Response_GetPulseDataContainer));
 							
 						}
 						if(mainActivity.prefs.getBoolean(mainActivity.getResources().getString(R.string.pref_delete), true)){
+							toReceiveSequence.add(new Packet(Packet.Command.PresenceBroadcast));
 							toSendSequence.add(new Packet(Packet.Command.Command_SmartErase));
 							toReceiveSequence.add(new Packet(Packet.Command.Response_SmartErase));
 						}
@@ -197,6 +199,7 @@ public class BlueToothInterface {
 	    }
 	 
 	    public void run() {
+	    	mainActivity.Log("starting decoding data");
 	    	Decoder decoder = new Decoder();
 	    	for(String fileName : tempFiles){
 	    		File file = new File(fileName);

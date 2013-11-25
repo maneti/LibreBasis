@@ -55,7 +55,7 @@ public class BasisActivity extends Activity implements Runnable {
 		scrollView.addView(myText);
 		myText.setText(log);
 		setContentView(scrollView);
-		//Decoder d = new Decoder("");
+		//Decoder d = new Decoder();
 		//d.decodeFile(Environment.getExternalStorageDirectory() + "/basis/test.log");//only used for debugging
 		
 	}

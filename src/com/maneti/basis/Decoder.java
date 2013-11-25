@@ -57,7 +57,7 @@ public class Decoder {
 		JSONObject decoded = decode(s.substring(6));
 		Calendar cal = Calendar.getInstance();
 		
-		File file = new File(Environment.getExternalStorageDirectory() + "/basis/basis_log_chunk_num_"+Integer.parseInt(Utils.reverseBytes(s.substring(2,6)), 16)+"_"+(cal.getTime().toString()).replace("/", ".")+".json");
+		File file = new File(Environment.getExternalStorageDirectory() + "/basis/basis_log_chunk_num_"+Integer.parseInt(Utils.reverseBytes(s.substring(2,6)), 16)+"_"+(cal.getTime().toString()).replace("/", ".")+"_debug.json");
 		if (!file.exists()) {
 	        try {
 	            file.createNewFile();
@@ -86,7 +86,7 @@ public class Decoder {
 				if  (firstDate == null && contents.indexOf("2900")>0){
 					ParseTime(contents.substring(0, 8));
 				}
-				while (!isValidTime(contents.substring(0,timeLength))){
+				while (!isValidTime(contents.substring(0,timeLength)) && contents.contains("2900")){
 					chunk = chunk+contents.substring(0,contents.indexOf("2900")+4);
 					contents = contents.substring(contents.indexOf("2900")+4);
 				}
@@ -105,7 +105,10 @@ public class Decoder {
 					//print 'skipping:'+chunk
 					continue;//sanity check: not sure what happened but chunks must be longer
 				}
+				
 				chunk=extra+chunk.substring(timeLength);//#time
+				root.put(isoFormat.format(time.getTime()), chunk);
+				//continue;
 				timeContainer = new JSONObject();
 					
 				if(root.has(time.getTime().toString())){
@@ -116,6 +119,10 @@ public class Decoder {
 				boolean partChunk = chunk.length() < 400;
 
 				String heartData = chunk.substring(chunk.length()-120);
+				while (heartData.substring(heartData.length()-18, heartData.length()-14).equalsIgnoreCase("3600")){
+							chunk = chunk.substring(0,chunk.length()-18);//summary data, added after 2.3 – 2.60 firmware update, haven't tried parsing it yet, so skip it
+							heartData = chunk.substring(chunk.length()-120);
+				}
 				if (!isValidTime(chunk.substring(chunk.length()-128,chunk.length()-120))){
 					heartData = chunk.substring(chunk.length()-122,chunk.length()-2);
 					chunk=chunk.substring(0,chunk.length()-2);
@@ -143,7 +150,7 @@ public class Decoder {
 				String galvanicData = chunk.substring(0,100);
 				timeContainer.put("galvanic", ParseGalvanic(galvanicData));
 				chunk = chunk.substring(100);//#galvanic
-				//sometimes a few bytes left... not sure what they are, could be part of galvanic data
+				//sometimes a few bytes left... not sure what they are, could be part of galvanic data*/
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
